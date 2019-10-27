@@ -1,8 +1,8 @@
-# Zubeyrs Blog
+#  Blogs
 
 ## Description
  This is a web application that allows users to express themselves using a blog posts. They they first create an account then log in to start creating blogs..
-#### By **Zubeyr Abubakar**
+#### By **tumaa**
 The user can:
 * See various blog posts
 * View blogposts they like
@@ -20,7 +20,7 @@ The user can:
 
 * Clone the application using git clone(this copies the app onto your device). In terminal:
 
-          $ git clone https://github.com/zubeir-Abubakar/blog.git
+          $ git clone https://github.com/tumaa/blog
           $ cd blog
 
 * Creating the virtual environment
@@ -61,8 +61,7 @@ The user can:
 
 ## Support and contact details
 For any questions, troubleshooting or contributions,  find me on:
-* Mobile: +254743046778
-* Email: zubkayare@gmail.com
+* Email: ramanfatuu@gmail.com
 ### License
 MIT License
-Copyright (c) {2019} **Zubeyr Abubakar**
+Copyright (c) {2019} **Tumaa**
