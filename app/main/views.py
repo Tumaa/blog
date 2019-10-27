@@ -1,153 +1,148 @@
-from flask import render_template,redirect,url_for,request,abort,flash
+from flask import render_template,request,redirect,url_for,abort
 from . import main
-from .forms import UpdateProfile,BlogForm,CommentForm,SubscribeForm
-from .. import db,photos
-from ..models import User,Blog,Comment,Subscriber
-from flask_login import login_required,current_user
-from .. import db,photos
-import json
-from .requests import get_quotes
-
+from flask_login import login_required, current_user
+from .forms import ReviewForm,CategoryForm,CommentForm,BlogForm
+from ..models import BlogCategory,Blog,Comments,UpVote,DownVote
+# from ..models import Review
+# Review = review.Review
+#display categories on the landing page
+from ..request import get_quote
 
 @main.route('/')
 def index():
-    travel = Blog.get_blogs('Travel-Blog')
-    fashion = Blog.get_blogs('Fashion-Blog')
-    food = Blog.get_blogs('Food-Blog')
-    politics = Blog.get_blogs('Political-Blog')
-    quote = get_quotes()
-    return render_template('index.html',travel = travel,fashion = fashion, food = food, quote=quote )
-@main.route('/user/<uname>')
-def profile(uname):
-    user = User.query.filter_by(username = uname).first()
-    if user is None:
-        abort(404)
-    return render_template("profile/profile.html", user = user)
-@main.route('/user/<uname>/update',methods = ['GET','POST'])
+    """ View root page function that returns index page """
+
+    category = BlogCategory.get_categories()
+    quote = get_quote()
+
+    title = 'Home- Welcome'
+    return render_template('index.html', title = title, categories=category, quote=quote)
+
+
+
+
+@main.route('/category/new-blog/<int:id>', methods=['GET', 'POST'])
 @login_required
-def update_profile(uname):
-    user = User.query.filter_by(username = uname).first()
-    if user is None:
-        abort(404)
-    form = UpdateProfile()
-    if form.validate_on_submit():
-        user.bio = form.bio.data
-        db.session.add(user)
-        db.session.commit()
-        return redirect(url_for('.profile',uname=user.username))
-    return render_template('profile/update.html',form =form)
-@main.route('/user/<uname>/update/pic',methods= ['POST'])
-@login_required
-def update_pic(uname):
-    user = User.query.filter_by(username = uname).first()
-    if 'photo' in request.files:
-        filename = photos.save(request.files['photo'])
-        path = f'photos/{filename}'
-        user.profile_pic_path = path
-        db.session.commit()
-    return redirect(url_for('main.profile',uname=uname))
-@main.route('/new-blog', methods = ['GET','POST'])
-@login_required
-def new_blog():
-    blog_form = BlogForm()
-    if blog_form.validate_on_submit():
-        title = blog_form.title.data
-        blog = blog_form.blog_body.data
-        category = blog_form.blog_category.data
-        new_blog = Blog(title = title, content = blog, category = category,user = current_user)
-        new_blog.save_blog()
-        return redirect(url_for('main.index'))
-    title = 'New Blog'
-    return render_template('new_blog.html', title = title, blog_form = blog_form)
-@main.route('/blogs/sports')
-def sports():
-    blogs = Blog.get_blogs('Sports-Blog')
-    return render_template('sports.html',blogs = blogs)
-@main.route('/blogs/travel')
-def travel():
-    blogs = Blog.get_blogs('Travel-Blog')
-    return render_template('travel.html',blogs = blogs)
-@main.route('/blogs/fitness')
-def fitness():
-    blogs = Blog.get_blogs('Fitness-Blog')
-    return render_template('fitness.html',blogs = blogs)
-@main.route('/blogs/fashion')
-def fashion():
-    blogs = Blog.get_blogs('Fashion-Blog')
-    return render_template('fashion.html',blogs = blogs)
-@main.route('/blogs/food')
-def food():
-    blogs = Blog.get_blogs('Food-Blog')
-    return render_template('food.html',blogs = blogs)
-@main.route('/blogs/politics')
-def politics():
-    blogs = Blog.get_blogs('Political-Blog')
-    return render_template('politics.html',blogs = blogs)
-@main.route('/blog/<int:id>', methods = ["GET","POST"])
-def blog(id):
-    blog = Blog.get_blog(id=id)
-    posted_date = blog.posted.strftime('%b %d, %Y')
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        name = comment_form.name.data
-        comment = comment_form.comment.data
-        new_comment = Comment(name = name, comment = comment, blog = blog)
-        new_comment.save_comment()
-        return redirect(url_for('main.blog',id=id))
-    
-    comments = Comment.get_comments(blog)
-    return render_template('get_blog.html', blog = blog, comment_form = comment_form, comments = comments, date = posted_date)
-@main.route('/blog/<int:id>/update', methods = ['GET','POST'])
-@login_required
-def update_blog(id):
-    blog = Blog.get_blog(id)
+def new_blog(id):
+    ''' Function to check Blogs form and fetch data from the fields '''
     form = BlogForm()
+    category = BlogCategory.query.filter_by(id=id).first()
+
+    if category is None:
+        abort(404)
+
     if form.validate_on_submit():
-        blog.title = form.title.data
-        blog.content = form.blog_body.data
-        blog.category = form.blog_category.data
-        db.session.commit()
-        return redirect(url_for('main.blog', id = id))
-    elif request.method == 'GET':
-        form.title.data = blog.title
-        form.blog_body.data = blog.content
-        form.blog_category.data = blog.category
-    return render_template('new_blog.html', blog_form = form, id=id)
+        content= form.content.data
+        new_blog= Blog(content=content,category_id= category.id)
+        new_blog.save_blog()
+        return redirect(url_for('.category', id=category.id))
 
-@main.route('/blog/delete/<int:id>', methods = ['GET', 'POST'])
+ 
+
+    return render_template('new_blog.html', blog_form=form, category=category)
+
+@main.route('/categories/<int:id>')
+def category(id):
+    category = BlogCategory.query.get(id)
+    if category is None:
+        abort(404)
+
+    blogs=Blog.get_blogs(id)
+    return render_template('category.html', blogs=blogs, category=category)
+
+@main.route('/add/category', methods=['GET','POST'])
 @login_required
-def delete_blog(id):
-    blog = Blog.get_blog(id)
-    db.session.delete(blog)
-    db.session.commit()
-    flash('Blog has been deleted')
-    return redirect(url_for('main.index'))
-    
-    return render_template('get_blog.html', id=id, blog = blog)
-@main.route('/blog/comment/delete/<int:id>', methods = ['GET', 'POST'])
+def new_category():
+    '''
+    View new group route function that returns a page with a form to create a category
+    '''
+    form = CategoryForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        new_category = BlogCategory(name=name)
+        new_category.save_category()
+
+        return redirect(url_for('.index'))
+
+    title = 'New category'
+    return render_template('new_category.html', category_form = form,title=title)
+
+
+#view single blog alongside its comments
+@main.route('/view-blogs/<int:id>', methods=['GET', 'POST'])
 @login_required
-def delete_comment(id):
-    comment = Comment.query.filter_by(id=id).first()
-    blog_id = comment.blog
-    Comment.delete_comment(id)
-    flash('Comment has been deleted')
-    return redirect(url_for('main.blog',id=blog_id))
-@main.route('/blogs/latest', methods = ['GET','POST'])
-def latest_blogs():
-    blogs = Blog.query.order_by(Blog.posted.desc()).all()
-    return render_template('latest.html',blogs = blogs)
-@main.route('/subscription',methods=['GET','POST'])
-def subscription():
-    return render_template('index.html', sports = sports, 
-    subscription_form = SubscribeForm()
-    if subscription_form.validate_on_submit():
-        new_subscriber = Subscriber(subscriber_name=subscription_form.subscriber_name.data,subscriber_email=subscription_form.subscriber_email.data)
-        db.session.add(new_subscriber)
-        db.session.commit()
-        return redirect(url_for('main.index'))    
-    return render_template('subscription.html',subscription_form = subscription_form)
+def view_blogs(id):
+    '''
+    Function the returns a single blog for comment to be added
+    '''
+    print(id)
+    blogs = Blog.query.get(id)
 
 
- c 333
- +7m 
+    if blogs is None:
+        abort(404)
+    #
+    comment = Comments.get_comments(id)
+    up_likes = UpVote.get_votes(id)
+    down_likes = DownVote.get_downvotes(id)
+    return render_template('view-blog.html', blogs=blogs, comment=comment, category_id=id,likes=up_likes,dislike=down_likes)
 
+
+#adding a comment
+@main.route('/write_comment/<int:id>', methods=['GET', 'POST'])
+@login_required
+def post_comment(id):
+    ''' function to post comments '''
+    form = CommentForm()
+    title = 'post comment'
+    blogs = Blog.query.filter_by(id=id).first()
+
+    if blogs is None:
+         abort(404)
+
+    if form.validate_on_submit():
+        opinion = form.opinion.data
+        new_comment = Comments(opinion=opinion, blogs_id=blogs.id)
+        new_comment.save_comment()
+        return redirect(url_for('.view_blogs', id=blogs.id))
+
+    return render_template('post_comment.html', comment_form=form, title=title)
+
+@main.route('/home/like/<int:id>', methods = ['GET','POST'])
+@login_required
+def like(id):
+    get_blog = UpVote.get_votes(id)
+    valid_string = f'{current_user.id}:{id}'
+
+    for get_blog in get_blog:
+        to_str = f'{get_blog}'
+        print(valid_string+" "+to_str)
+        if valid_string == to_str:
+            return redirect(url_for('main.view_blogs',id=id))
+        else:
+            continue
+
+    like_blog = UpVote( blog_id=id)
+    like_blog.save_vote()
+
+    return redirect(url_for('main.view_blogs',id=id))
+
+@main.route('/home/dislike/<int:id>', methods = ['GET','POST'])
+@login_required
+def dislike(id):
+    get_blog = DownVote.get_downvotes(id)
+    valid_string = f'{current_user.id}:{id}'
+
+    for get_blog in get_blog:
+        to_str = f'{get_blog}'
+        print(valid_string+" "+to_str)
+        if valid_string == to_str:
+            return redirect(url_for('main.view_blogs',id=id))
+        else:
+            continue
+
+    dislike_blog = DownVote( blog_id=id)
+    dislike_blog.save_vote()
+
+    return redirect(url_for('main.view_blogs',id=id))
