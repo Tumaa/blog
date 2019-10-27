@@ -29,7 +29,7 @@
     border-radius: 50px;
   }
     body {
-      background-image: url(https://content.thriveglobal.com/wp-content/uploads/2019/03/Passion1.jpg);
+      background-image: url(https://images.pexels.com/photos/371589/pexels-photo-371589.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500);
       background-repeat: no-repeat;
       background-size: cover;
     }
@@ -76,7 +76,10 @@
         <div class="row">
           <h4 class="text-left"><a class="btn btn-success" href="/add/category"> Add a blog Category </a></h4>
 
-          <div class="jumbotron">{{ macro.displayCategoryList(categories) }}</div>
+          <div class="jumbotron">
+          <h2 class='text-center'>CATEGORIES</h2>
+
+          {{ macro.displayCategoryList(categories) }}</div>
 
         </div>
       </div>
