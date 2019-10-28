@@ -7,7 +7,6 @@ from .forms import LoginForm, RegistrationForm
 from .. import db
 from ..email import mail_message
 
-
 @auth.route('/login', methods = ["GET", "POST"])
 def login():
     login_form = LoginForm()
@@ -16,16 +15,14 @@ def login():
         if user is not None and user.verify_password(login_form.password.data):
             login_user(user, login_form.remember.data)
             return redirect(request.args.get('next') or url_for('main.index'))
-
         flash('Invalid username or password')
         session.permanent = True
     title = "Login"
     return render_template('auth/login.html', title = title, login_form = login_form)
-
 @auth.route('/register', methods = ["GET", "POST"])
 def register():
     form = RegistrationForm()
-    if form.validaValidationErrorValidationErrorte_on_submit():
+    if form.validate_on_submit():
         user = User(email = form.email.data, username = form.username.data, password = form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -33,7 +30,6 @@ def register():
             
         return redirect(url_for('.login'))
         flash('Succesfully register please proceed to login')
-
     title = "New Account created"
     return render_template('auth/register.html', title = title, registration_form = form)
 @auth.route('/logout')
