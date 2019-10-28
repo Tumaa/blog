@@ -20,7 +20,7 @@ def create_app(config_name):
 
     # creating app configurations
     app.config.from_object(config_options[config_name])
-    app.config['SECRET_KEY'] = 'mzinge'
+    app.config['SECRET_KEY'] = '12345'
 
     # configure UploadSet
 
