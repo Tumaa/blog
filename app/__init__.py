@@ -19,7 +19,7 @@ def create_app(config_name):
     app = Flask(__name__)
 
     # creating app configurations
-    app.config.from_object(config_options[config_name])
+    app.config.get_config_option("sqlalchemy.url")
     app.config['SECRET_KEY'] = '12345'
 
     # configure UploadSet
